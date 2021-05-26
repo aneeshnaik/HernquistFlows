@@ -18,8 +18,6 @@ from hernquist import calc_DF_iso
 from ml import load_flow, calc_DF_ensemble
 
 
-
-
 def get_f_exact(rgrid, vgrid, M, a):
     """Get exact Hernquist DF evaluated on r/v grids."""
     # deproject grids into 6D
@@ -88,125 +86,132 @@ def get_f_model(rgrid, vgrid, M, a):
     return f_model
 
 
-# Hernquist params and scaling units
-M = 1e+10 * M_sun
-a = 5 * kpc
-u_pos = 10 * a
-u_vel = np.sqrt(2 * G * M / a)
+if __name__ == '__main__':
 
-# grid dims
-r_max = 5.5 * a
-v_max = np.sqrt(2 * G * M / a)
-N_bins = 128
+    # Hernquist params and scaling units
+    M = 1e+10 * M_sun
+    a = 5 * kpc
+    u_pos = 10 * a
+    u_vel = np.sqrt(2 * G * M / a)
 
-# check if plot data exists, otherwise generate
-dfile = "fig1_data.npz"
-if not exists(dfile):
+    # grid dims
+    r_max = 5.5 * a
+    v_max = np.sqrt(2 * G * M / a)
+    N_bins = 128
 
-    # define r/v bins in which to evaluate DF
-    r_bin_edges = np.linspace(0, r_max, N_bins + 1)
-    v_bin_edges = np.linspace(0, v_max, N_bins + 1)
-    r_cen = 0.5 * (r_bin_edges[1:] + r_bin_edges[:-1])
-    v_cen = 0.5 * (v_bin_edges[1:] + v_bin_edges[:-1])
-    rgrid, vgrid = np.meshgrid(r_cen, v_cen)
-    dr = r_max / N_bins
-    dv = v_max / N_bins
+    # check if plot data exists, otherwise generate
+    dfile = "fig1_data.npz"
+    if not exists(dfile):
 
-    # f_ref
-    x0 = np.array([a, 0, 0])
-    v0 = np.array([v_max / 4, 0, 0])
-    f_ref = calc_DF_iso(x0, v0, M, a)
-    f_ref = 16 * pi**2 * f_ref * a**2 * (v_max / 4)**2 * dr * dv
+        # define r/v bins in which to evaluate DF
+        r_bin_edges = np.linspace(0, r_max, N_bins + 1)
+        v_bin_edges = np.linspace(0, v_max, N_bins + 1)
+        r_cen = 0.5 * (r_bin_edges[1:] + r_bin_edges[:-1])
+        v_cen = 0.5 * (v_bin_edges[1:] + v_bin_edges[:-1])
+        rgrid, vgrid = np.meshgrid(r_cen, v_cen)
+        dr = r_max / N_bins
+        dv = v_max / N_bins
 
-    # get various DFs
-    f_exact = get_f_exact(rgrid, vgrid, M, a) / f_ref
-    f_data = get_f_data(r_bin_edges, v_bin_edges) / f_ref
-    f_model = get_f_model(rgrid, vgrid, M, a) / f_ref
+        # f_ref
+        x0 = np.array([a, 0, 0])
+        v0 = np.array([v_max / 4, 0, 0])
+        f_ref = calc_DF_iso(x0, v0, M, a)
+        f_ref = 16 * pi**2 * f_ref * a**2 * (v_max / 4)**2 * dr * dv
 
-    # calculate residuals
-    with np.errstate(divide='ignore', invalid='ignore'):
-        res = np.divide((f_model - f_exact), f_exact)
+        # get various DFs
+        f_exact = get_f_exact(rgrid, vgrid, M, a) / f_ref
+        f_data = get_f_data(r_bin_edges, v_bin_edges) / f_ref
+        f_model = get_f_model(rgrid, vgrid, M, a) / f_ref
 
-    np.savez(dfile, f_exact=f_exact, f_data=f_data, f_model=f_model, res=res)
-else:
-    data = np.load(dfile)
-    f_exact = data['f_exact']
-    f_model = data['f_model']
-    f_data = data['f_data']
-    res = data['res']
+        # calculate residuals
+        with np.errstate(divide='ignore', invalid='ignore'):
+            res = np.divide((f_model - f_exact), f_exact)
 
-# set up figure
-fig = plt.figure(figsize=(6.9, 3), dpi=150)
-left = 0.065
-right = 0.98
-bottom = 0.125
-top = 0.83
-dX = (right - left) / 4
-dY = (top - bottom)
-CdY = 0.05
-
-# plot settings
-plt.rcParams['text.usetex'] = True
-plt.rcParams['font.family'] = 'serif'
-plt.rcParams['font.size'] = 9
-plt.rcParams['ytick.labelsize'] = 8
-plt.rcParams['xtick.labelsize'] = 8
-labels = ['Exact', 'Data', 'Model', 'Residuals']
-cmap = copy.copy(plt.cm.bone)
-cmap.set_under('white')
-vmin = 0.00001
-vmax = 1.3
-extent = [0, r_max / a, 0, 1]
-iargs1 = {'origin': 'lower', 'cmap': cmap, 'vmin': vmin, 'vmax': vmax,
-          'extent': extent, 'aspect': 'auto'}
-iargs2 = {'origin': 'lower', 'extent': extent, 'vmin': -0.75, 'vmax': 0.75,
-          'cmap': 'Spectral_r', 'aspect': 'auto'}
-
-# loop over panels
-for i in range(4):
-
-    # set up axes
-    ax = fig.add_axes([left + i * dX, top - dY, dX, dY])
-
-    # get relevant DF
-    if i == 0:
-        f = np.copy(f_exact)
-    elif i == 1:
-        f = np.copy(f_data)
-    elif i == 2:
-        f = np.copy(f_model)
+        # save data file
+        np.savez(
+            dfile, f_exact=f_exact, f_data=f_data, f_model=f_model, res=res
+        )
     else:
-        f = np.copy(res)
+        # load data file
+        data = np.load(dfile)
+        f_exact = data['f_exact']
+        f_model = data['f_model']
+        f_data = data['f_data']
+        res = data['res']
 
-    # plot DF
-    if i == 3:
-        im1 = ax.imshow(res, **iargs2)
-    else:
-        im0 = ax.imshow(f, **iargs1)
+    # set up figure
+    fig = plt.figure(figsize=(6.9, 3), dpi=150)
+    left = 0.065
+    right = 0.98
+    bottom = 0.125
+    top = 0.83
+    dX = (right - left) / 4
+    dY = (top - bottom)
+    CdY = 0.05
 
-    # text
-    ax.text(0.97, 0.96, labels[i], ha='right', va='top',
-            transform=ax.transAxes)
+    # plot settings
+    plt.rcParams['text.usetex'] = True
+    plt.rcParams['font.family'] = 'serif'
+    plt.rcParams['font.size'] = 9
+    plt.rcParams['ytick.labelsize'] = 8
+    plt.rcParams['xtick.labelsize'] = 8
+    labels = ['Exact', 'Data', 'Model', 'Residuals']
+    cmap = copy.copy(plt.cm.bone)
+    cmap.set_under('white')
+    vmin = 0.00001
+    vmax = 1.3
+    extent = [0, r_max / a, 0, 1]
+    iargs1 = {'origin': 'lower', 'cmap': cmap, 'vmin': vmin, 'vmax': vmax,
+              'extent': extent, 'aspect': 'auto'}
+    iargs2 = {'origin': 'lower', 'extent': extent, 'vmin': -0.75, 'vmax': 0.75,
+              'cmap': 'Spectral_r', 'aspect': 'auto'}
 
-    # ticks, axis labels etc.
-    ax.tick_params(top=True, right=True, direction='inout')
-    if i == 0:
-        ax.set_ylabel(r"$v\ /\ v_\mathrm{esc}(r=0)$")
-    else:
-        ax.tick_params(labelleft=False)
-    if i == 2:
-        ax.set_xlabel(r"$r\ /\ a$")
-        ax.xaxis.set_label_coords(0, -0.1)
+    # loop over panels
+    for i in range(4):
 
-# colourbars
-cax0 = fig.add_axes([left, top, 3 * dX, CdY])
-cax1 = fig.add_axes([left + 3 * dX, top, dX, CdY])
-plt.colorbar(im0, cax=cax0, orientation='horizontal')
-plt.colorbar(im1, cax=cax1, orientation='horizontal')
-cax0.set_xlabel(r"$F / F_\mathrm{ref}$")
-cax1.set_xlabel(r"Model / Exact - 1")
-for cax in [cax0, cax1]:
-    cax.xaxis.set_ticks_position('top')
-    cax.xaxis.set_label_position('top')
+        # set up axes
+        ax = fig.add_axes([left + i * dX, top - dY, dX, dY])
 
-fig.savefig("fig1_iso.pdf")
+        # get relevant DF
+        if i == 0:
+            f = np.copy(f_exact)
+        elif i == 1:
+            f = np.copy(f_data)
+        elif i == 2:
+            f = np.copy(f_model)
+        else:
+            f = np.copy(res)
+
+        # plot DF
+        if i == 3:
+            im1 = ax.imshow(res, **iargs2)
+        else:
+            im0 = ax.imshow(f, **iargs1)
+
+        # text
+        ax.text(0.97, 0.96, labels[i], ha='right', va='top',
+                transform=ax.transAxes)
+
+        # ticks, axis labels etc.
+        ax.tick_params(top=True, right=True, direction='inout')
+        if i == 0:
+            ax.set_ylabel(r"$v\ /\ v_\mathrm{esc}(r=0)$")
+        else:
+            ax.tick_params(labelleft=False)
+        if i == 2:
+            ax.set_xlabel(r"$r\ /\ a$")
+            ax.xaxis.set_label_coords(0, -0.1)
+
+    # colourbars
+    cax0 = fig.add_axes([left, top, 3 * dX, CdY])
+    cax1 = fig.add_axes([left + 3 * dX, top, dX, CdY])
+    plt.colorbar(im0, cax=cax0, orientation='horizontal')
+    plt.colorbar(im1, cax=cax1, orientation='horizontal')
+    cax0.set_xlabel(r"$F / F_\mathrm{ref}$")
+    cax1.set_xlabel(r"Model / Exact - 1")
+    for cax in [cax0, cax1]:
+        cax.xaxis.set_ticks_position('top')
+        cax.xaxis.set_label_position('top')
+
+    # save
+    fig.savefig("fig1_iso.pdf")
