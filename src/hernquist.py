@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Various functions relating to the Hernquist model.
+Functions for isotropic and anisotropic Hernquist DF.
 
 Created: May 2021
 Author: A. P. Naik

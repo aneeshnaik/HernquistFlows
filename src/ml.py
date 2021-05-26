@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Various functions &c for machine learning.
+Various functions relating to training and analysing the normalising flows.
 
 Created: May 2021
 Author: A. P. Naik
