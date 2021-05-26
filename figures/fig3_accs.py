@@ -82,7 +82,7 @@ if __name__ == "__main__":
                                          df_args=df_args)
                 gradxf /= f_ref
                 gradvf /= f_ref
-                model[i] = calc_accel_CBE(q, p, gradxf, gradvf)[0]
+                model[i] = calc_accel_CBE(p, gradxf, gradvf)[0]
 
         # rescale data
         u = G * M / a**2
