@@ -14,22 +14,19 @@ if __name__ == '__main__':
     # set up RNG
     rng = np.random.default_rng(42)
 
-    # loop over isotropic and anisotropic datasets
-    for df in ['hq_iso', 'hq_aniso']:
+    # load original dataset
+    data = np.load("hq_iso_orig.npz")
+    pos = data['pos']
+    vel = data['vel']
 
-        # load original dataset
-        data = np.load(df + "_orig.npz")
-        pos = data['pos']
-        vel = data['vel']
+    # loop over 10% and 1% noise
+    for i in range(2):
 
-        # loop over 10% and 1% noise
-        for i in range(2):
+        # generate noise
+        scale = [0.1, 0.01][i]
+        pos_new = pos * rng.normal(loc=1.0, scale=scale, size=pos.shape)
+        vel_new = vel * rng.normal(loc=1.0, scale=scale, size=vel.shape)
 
-            # generate noise
-            scale = [0.1, 0.01][i]
-            pos_new = pos * rng.normal(loc=1.0, scale=scale, size=pos.shape)
-            vel_new = vel * rng.normal(loc=1.0, scale=scale, size=vel.shape)
-
-            # save
-            fname_suffix = ['_10pc_noise', '_1pc_noise'][i]
-            np.savez(df + fname_suffix, pos=pos_new, vel=vel_new)
+        # save
+        fname = ['hq_iso_10pc_noise', 'hq_iso_1pc_noise'][i]
+        np.savez(fname, pos=pos_new, vel=vel_new)
