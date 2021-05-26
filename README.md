@@ -50,4 +50,16 @@ These scripts give different example use cases for how to read and analyse the n
 
 ### `/nflow_models`
 
-*COMING SOON*
+There are four subdirectories in here, one for each dataset in `/data`. Each subdirectory contains:
+- An ensemble of trained flow models, `x_best.pth`, with `x` being some integer. 
+- For each flow model, a saved numpy array containing training losses, `x_losses.npy`
+- One script (total, not one per `.pth` model), `train_nflow.py`: running this script kicks off the training procedure which generates the other files.
+
+The runscript `train_nflow.py` works by loading the appropriate dataset, rescaling it, then feeding it to a randomly initialised normalising flow which then trains from it. It does this with one main underlying function call to `train_flow`, defined in `src/ml.py`.
+
+The only difference between the different members of the flow ensemble (i.e. the different `.pth` files in a given subdirectory) is the random initialisation of the flow. This is set by a random seed, which is taken as a mandatory argument by `train_flow.py`. For example, one could run the command:
+
+    python train_nflow.py 243
+ 
+This would then take 243 as a random seed to initialise the normalising flow, then train the flow and (eventually) save the best fit model as `243_best.pth`, and the losses as `243_losses.npy`.
+ 
