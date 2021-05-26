@@ -62,4 +62,25 @@ The only difference between the different members of the flow ensemble (i.e. the
     python train_nflow.py 243
  
 This would then take 243 as a random seed to initialise the normalising flow, then train the flow and (eventually) save the best fit model as `243_best.pth`, and the losses as `243_losses.npy`.
- 
+
+### `/src`
+
+There are 5 python files in this subdirectory, and these form the main workhorse of the codebase. A brief summary of the contents of each file is given here, but all of the objects contained within these files are themselves well-documented, so further details can be found there.
+
+- `cbe.py`: this deals with calculating accelerations from gradients of a DF (via an inversion of the CBE). It contains only one function: `calc_accel_CBE`.
+- `constants.py`: this contains various physical constants and unit definitions
+- `hernquist.py`: this contains exact definitions for the Hernquist isotropic and anisotropic DFs, via the functions `calc_DF_iso` and `calc_DF_aniso` respectively.
+- `ml.py`: this contains a number of functions relating to the training and subsequent analysis of normalising flows.
+    1. `setup_MAF`: Initialises a masked autoregressive flow.
+    2. `load_flow`: Loads a saved flow model.
+    3. `calc_total_loss`: Compute total loss of model on data.
+    4. `train_epoch`: Train flow model for one epoch.
+    5. `calc_DF_model`: Given a flow model, evaluate DF at desired phase points.
+    6. `calc_DF_ensemble`: Given an ensemble of flow models, evaluate DF at desired phase points, averaging across ensemble.
+    7. `train_flow`: Train a normalising flow on data. This is the main function called by the runscript `train_nflow.py` in `/nflow_models`.
+- `utils.py`: this is essentially an oddbin containing utility functions that don't belong anywhere else. There are three of these:
+    1. `get_rescaled_tensor`: given a dataset as in `/data`, this function rescales, shuffles, and stacks the data, then returns it as a torch tensor ready to be trained on. 
+    2. `diff_DF`: given a DF, this function calculates its spatial and velocity derivatives. 
+    3. `sample_velocities`: this function samples a number of velocities at a given position (for use in calculating accelerations).
+
+
