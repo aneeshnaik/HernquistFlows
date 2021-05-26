@@ -1,1 +1,0 @@
-This is a project led by Jin An, in which a method has been developed to convert a known DF to a gravitational acceleration. I'm providing some figures testing the method.
