@@ -6,10 +6,18 @@
 This code was used to generate the results in Section 5 ('Implementation') of An, Naik, Evans, and Burrage (2021). That paper describes a new method for calculating gravitational accelerations from a known stellar distribution function. In Section 5, we provide a demonstration of this technique, applying it to mock datasets generated from isotropic and anisotropic distribution functions corresponding to the Hernquist model.
 
 In particular, we demonstrate a two-stage procedure:
-1. We use normalising flows to 'learn' the distribution function of a 6D mock dataset.
+1. We use normalising flows to 'learn' the distribution function of a 6D mock dataset. Here, our code is built around the implementation of masked autoregressive flows in the package `nflows`.
 2. We then convert these learned DFs to accelerations using our new technique.
 
 Please see our paper for more details about the technique.
+
+## Citation
+
+Our code is freely available for use under the MIT License. For details, see LICENSE.
+
+If using our code, please cite our paper (link: **coming soon**). 
+
+Additionally, if using the normalising flow part of our code to learn DFs, please also consider citing the package `nflows` ([link](https://github.com/bayesiains/nflows)) around which that part of our code is built, as well as the article by Green & Ting (2020) ([link](https://arxiv.org/abs/2011.04673)) in which the idea was first proposed.
 
 ## Structure
 
