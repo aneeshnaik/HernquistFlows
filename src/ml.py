@@ -23,19 +23,60 @@ from nflows.transforms import MaskedAffineAutoregressiveTransform as MAAT
 
 
 def setup_MAF(n_dim, n_layers, n_hidden):
-    """Set up masked autoregressive flow."""
+    """
+    Set up masked autoregressive flow.
+
+    Parameters
+    ----------
+    n_dim : int
+        Number of flow input dimensions, i.e. dimensionality of dataset.
+    n_layers : int
+        Number of transformations along the flow.
+    n_hidden : int
+        Number of hidden layers in each transformation.
+
+    Returns
+    -------
+    flow : nflows.flows.Flow
+        Normalising flow, instance of Flow object from nflows.flows.
+
+    """
+    # base distribution
     base_dist = StandardNormal(shape=[n_dim])
+
+    # loop over layers in flow
     transforms = []
     for _ in range(n_layers):
         transforms.append(ReversePermutation(features=n_dim))
         transforms.append(MAAT(features=n_dim, hidden_features=n_hidden))
+
+    # assemble flow
     transform = CompositeTransform(transforms)
     flow = Flow(transform, base_dist)
     return flow
 
 
 def load_flow(state_dict, n_dim, n_layers, n_hidden):
-    """Load flow from state dict."""
+    """
+    Load flow from state dict.
+
+    Parameters
+    ----------
+    state_dict : str
+        Path to pytorch state dict (e.g. .pth) file.
+    n_dim : int
+        Number of flow input dimensions, i.e. dimensionality of dataset.
+    n_layers : int
+        Number of transformations along the flow.
+    n_hidden : int
+        Number of hidden layers in each transformation.
+
+    Returns
+    -------
+    flow : nflows.flows.Flow
+        Normalising flow, instance of Flow object from nflows.flows.
+
+    """
     flow = setup_MAF(n_dim=n_dim, n_layers=n_layers, n_hidden=n_hidden)
     flow.load_state_dict(torch.load(state_dict))
     flow.eval()
@@ -43,15 +84,57 @@ def load_flow(state_dict, n_dim, n_layers, n_hidden):
 
 
 def calc_total_loss(flow, data):
-    """Compute total loss of model on data."""
+    """
+    Compute total loss of model on data.
+
+    Parameters
+    ----------
+    flow : nflows.flows.Flow
+        Normalising flow, instance of Flow object from nflows.flows, generated
+        from e.g. load_flow() or setup_MAF().
+    data : torch.Tensor, shape (N, n_dim)
+        Torch tensor containing data on which to evaluate flow loss. Tensor
+        should have shape (N, n_dim), where N is number of data points and
+        n_dim is number of input dims of flow.
+
+    Returns
+    -------
+    loss : float
+        Model loss evaluated on given dataset.
+
+    """
     flow.eval()
     with torch.no_grad():
-        loss = -flow.log_prob(inputs=data, context=None).mean()
+        loss = -flow.log_prob(inputs=data, context=None).mean().item()
     return loss
 
 
 def train_epoch(flow, data, batch_size, optimiser, scheduler):
-    """Train flow model on data for one epoch."""
+    """
+    Train flow model on data for one epoch.
+
+    Parameters
+    ----------
+    flow : nflows.flows.Flow
+        Normalising flow, instance of Flow object from nflows.flows, generated
+        from e.g. load_flow() or setup_MAF().
+    data : torch.Tensor, shape (N, n_dim)
+        Torch tensor containing data on which to evaluate flow loss. Tensor
+        should have shape (N, n_dim), where N is number of data points and
+        n_dim is number of input dims of flow.
+    batch_size : int
+        Number of data points in batch.
+    optimiser : torch.optim Optimizer
+        A pytorch Optimizer instance, e.g. Adam
+    scheduler : torch..optim.lr_scheduler Scheduler
+        A scheduler from torch.optim.lr_scheduler, e.g. ReduceLROnPlateau.
+
+    Returns
+    -------
+    loss : float
+        Model loss evaluated on given dataset.
+
+    """
     # set to training mode
     flow.train()
 
@@ -77,25 +160,30 @@ def train_epoch(flow, data, batch_size, optimiser, scheduler):
 
 def calc_DF_model(q, p, u_q, u_p, flow):
     """
-    Evaluate DF from flow.
+    Evaluate model DF at given phase positions from single flow.
 
     Parameters
     ----------
-    q : numpy array, shape (N, 3)
-        DESCRIPTION.
-    p : numpy array, shape (N, 3)
-        DESCRIPTION.
+    q : np.array or torch.tensor, shape (N, 3) or (3)
+        Positions at which to evaluate DF. Either an array shaped (N, 3) for N
+        different phase points, or shape (3) for single phase point.
+        UNITS: metres.
+    p : np.array or torch.tensor, shape (N, 3) or (3)
+        Velocities at which to evaluate DF. UNITS: m/s.
     u_q : float
-        DESCRIPTION.
+        Rescaling units for positions (i.e. rescaling used to train flow).
     u_p : float
-        DESCRIPTION.
-    flow : TYPE
-        DESCRIPTION.
+        Rescaling units for velocities (i.e. rescaling used to train flow).
+    flow : nflows.flows.Flow
+        Normalising flow, instance of Flow object from nflows.flows, generated
+        from e.g. load_flow() or setup_MAF().
 
     Returns
     -------
-    f : TYPE
-        DESCRIPTION.
+    f : np.array or torch.tensor (shape (N)) or float
+        DF evaluated at given phase points. If inputs are 1D, f is float. If
+        inputs are 2D, f is either np.array or torch.tensor, matching type of
+        input. Gradient information is propagated if torch.tensor.
 
     """
     # check shapes match
@@ -136,25 +224,30 @@ def calc_DF_model(q, p, u_q, u_p, flow):
 
 def calc_DF_ensemble(q, p, u_q, u_p, flows):
     """
-    Evaluate DF from ensemble of flows.
+    Evaluate model DF at given phase positions from ensemble of flows.
 
     Parameters
     ----------
-    q : numpy array, shape (N, 3)
-        DESCRIPTION.
-    p : numpy array, shape (N, 3)
-        DESCRIPTION.
+    q : np.array or torch.tensor, shape (N, 3) or (3)
+        Positions at which to evaluate DF. Either an array shaped (N, 3) for N
+        different phase points, or shape (3) for single phase point.
+        UNITS: metres.
+    p : np.array or torch.tensor, shape (N, 3) or (3)
+        Velocities at which to evaluate DF. UNITS: m/s.
     u_q : float
-        DESCRIPTION.
+        Rescaling units for positions (i.e. rescaling used to train flow).
     u_p : float
-        DESCRIPTION.
-    flow : TYPE
-        DESCRIPTION.
+        Rescaling units for velocities (i.e. rescaling used to train flow).
+    flow : list of nflows.flows.Flow objects
+        List of normalising flows, each is an instance of Flow object from
+        nflows.flows, generated from e.g. load_flow() or setup_MAF().
 
     Returns
     -------
-    f : TYPE
-        DESCRIPTION.
+    f : np.array or torch.tensor (shape (N)) or float
+        DF evaluated at given phase points. If inputs are 1D, f is float. If
+        inputs are 2D, f is either np.array or torch.tensor, matching type of
+        input. Gradient information is propagated if torch.tensor.
 
     """
     # loop over flows
@@ -167,49 +260,66 @@ def calc_DF_ensemble(q, p, u_q, u_p, flows):
     return f
 
 
-def train_flow(data, seed,
-               n_dim=6, n_layers=8, n_hidden=64,
-               lr=1e-3, lrgamma=0.5, lrpatience=5, lrmin=2e-6, lrthres=1e-6, lrcooldown=10,
+def train_flow(data, seed, n_dim=6, n_layers=8, n_hidden=64,
+               lr=1e-3, lrgamma=0.5, lrpatience=5,
+               lrmin=2e-6, lrthres=1e-6, lrcooldown=10,
                weight_decay=0, batch_size=10000, num_epochs=500,
-               save_intermediate=False, save_interval=10,
-               cut_early=True, patience=15):
+               save_intermediate=False, save_interval=10, cut_early=True):
     """
-    Train normalising flow.
+    Train normalising flow on data.
 
     Parameters
     ----------
-    data : TYPE
-        DESCRIPTION.
-    n_dim : TYPE, optional
-        DESCRIPTION. The default is 6.
-    n_layers : TYPE, optional
-        DESCRIPTION. The default is 8.
-    n_hidden : TYPE, optional
-        DESCRIPTION. The default is 64.
-    lr : TYPE, optional
-        DESCRIPTION. The default is 2e-3.
-    lrgamma : TYPE, optional
-        DESCRIPTION. The default is 0.5.
-    lrpatience : TYPE, optional
-        DESCRIPTION. The default is 5.
-    lrmin : TYPE, optional
-        DESCRIPTION. The default is 1e-6.
-    lrthres : TYPE, optional
-        DESCRIPTION. The default is 1e-6.
-    weight_decay : TYPE, optional
-        DESCRIPTION. The default is 0.
-    batch_size : TYPE, optional
-        DESCRIPTION. The default is 10000.
-    num_epochs : TYPE, optional
-        DESCRIPTION. The default is 500.
-    save_intermediate : TYPE, optional
-        DESCRIPTION. The default is False.
-    save_interval : TYPE, optional
-        DESCRIPTION. The default is 10.
-    cut_early : TYPE, optional
-        DESCRIPTION. The default is True.
-    patience : TYPE, optional
-        DESCRIPTION. The default is 15.
+    data : torch.Tensor, shape (N, n_dim)
+        Torch tensor containing data on which to evaluate flow loss. Tensor
+        should have shape (N, n_dim), where N is number of data points and
+        n_dim is number of input dims of flow, matching 'n_dim' argument.
+    seed : int
+        Random seed to initialise flow.
+    n_dim : int
+        Number of flow input dimensions, i.e. dimensionality of dataset. The
+        default is 6.
+    n_layers : int
+        Number of transformations along the flow. The default is 8.
+    n_hidden : int
+        Number of hidden layers in each transformation. The default is 64.
+    lr : float, optional
+        Initial learning rate. The default is 1e-3.
+    lrgamma : float, optional
+        Factor by which learning rate is decreased on plateau. The default is
+        0.5.
+    lrpatience : float, optional
+        Number of training epochs to wait on plateau before reducing lr. The
+        default is 5.
+    lrmin : float, optional
+        Minimum learning rate beyond which to decrease no further.
+        Additionally, if 'cut_early' is True then the training is truncated
+        when the learning rate hits lrmin. The default is 2e-6.
+    lrthres : float, optional
+        Threshold for measuring the new optimum, to only focus on significant
+        changes. The default is 1e-6.
+    lrcooldown : int, optional
+        Number of training epochs to wait before resuming normal operation
+        (i.e. resuming counting bad epochs) after reducing the learning rate.
+        The default is 10.
+    weight_decay : float, optional
+        Weight decay for L2 regularisation. The default is 0.
+    batch_size : int, optional
+        Batch size for gradient descent. The default is 10000.
+    num_epochs : int, optional
+        Number of training epochs to loop over. If 'cut_early' is True then
+        the training can stop before num_epochs if the learning rate hits
+        lrmin. The default is 500.
+    save_intermediate : bool, optional
+        Whether to save snapshots of flow before the training has finished. The
+        frequency of saves if set by 'save_interval' below. The default is
+        False.
+    save_interval : int, optional
+        If 'save_intermediate' is True, the number of epochs between each save
+        file. The default is 10.
+    cut_early : bool, optional
+        If True, training is truncated early (i.e. before num_epochs) if
+        learning rate reaches lrmin. The default is True.
 
     Returns
     -------
