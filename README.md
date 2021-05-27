@@ -11,12 +11,6 @@ In particular, we demonstrate a two-stage procedure:
 
 Please see our paper for more details about the technique.
 
-
-## Prerequisites
-
-*COMING SOON*
-
-
 ## Structure
 
 This code is structured as follows:
@@ -84,3 +78,17 @@ There are 5 python files in this subdirectory, and these form the main workhorse
     3. `sample_velocities`: this function samples a number of velocities at a given position (for use in calculating accelerations).
 
 
+## Prerequisites
+
+This section lists the various dependencies of our code. The version number in parenthesis is not (necessarily) a requirement, but simply the version of a given library we used at the time of publication. Earlier/later versions of a library could work equally well.
+
+The following packages are used extensively throughout our code:
+- `numpy` (1.19.2)
+- `pytorch` (1.7.1)
+
+The following packages are used only in specific places:
+- `emcee` (3.0.2): MCMC sampler used to sample mock Hernquist datasets in `/data`
+- `nflows` (0.14): implementation of normalising flows used in `/src/ml.py`
+- `matplotlib` (3.3.4): used to generate plots in `/figures`
+- `tqdm` (4.59.0): progress bar used for the slower plots in `/figures`
+- `scipy` (1.7.1): integration procedure used to normalise PDF shown in one plot (in `/figures`)
