@@ -71,7 +71,7 @@ if __name__ == "__main__":
         f_exact = normalise_DF(f_exact, vR_cen, vT_cen)
 
         # load flows
-        n_flows = 35
+        n_flows = 30
         flows = []
         for j in range(n_flows):
             fname = f"../nflow_models/hq_aniso_orig/{j}_best.pth"

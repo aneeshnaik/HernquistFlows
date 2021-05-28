@@ -42,7 +42,7 @@ if __name__ == "__main__":
         a_exact = -(G * M / a**2) / (1 + x / a)**2
 
         # load flows
-        n_flows = 20
+        n_flows = 30
         flows0 = []
         flows1 = []
         flows10 = []
@@ -50,9 +50,9 @@ if __name__ == "__main__":
         for i in range(n_flows):
             fname = f"../nflow_models/hq_iso_orig/{i}_best.pth"
             flows0.append(load_flow(fname, 6, 8, 64))
-            fname = f"../nflow_models/hq_iso_1pc/{i % 10}_best.pth"
+            fname = f"../nflow_models/hq_iso_1pc/{i}_best.pth"
             flows1.append(load_flow(fname, 6, 8, 64))
-            fname = f"../nflow_models/hq_iso_10pc/{i % 10}_best.pth"
+            fname = f"../nflow_models/hq_iso_10pc/{i}_best.pth"
             flows10.append(load_flow(fname, 6, 8, 64))
             fname = f"../nflow_models/hq_aniso_orig/{i}_best.pth"
             flowsaniso.append(load_flow(fname, 6, 8, 64))

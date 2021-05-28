@@ -36,7 +36,7 @@ if __name__ == "__main__":
     if not exists(dfile):
 
         # load flows
-        n_flows = 20
+        n_flows = 30
         flows = []
         for i in range(n_flows):
             fname = f"../nflow_models/hq_iso_orig/{i}_best.pth"

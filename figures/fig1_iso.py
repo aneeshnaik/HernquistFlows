@@ -72,7 +72,7 @@ def get_f_model(rgrid, vgrid, M, a):
     u_f = u_q**3 * u_p**3
 
     # load flows
-    n_flows = 10
+    n_flows = 30
     flows = []
     for i in range(n_flows):
         fname = f"../nflow_models/hq_iso_orig/{i}_best.pth"
